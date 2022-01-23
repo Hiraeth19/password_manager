@@ -24,7 +24,10 @@ string encrypt(string key, string value, int mode){
     int shift = hashfunc(key, mode);
     string cipher_txt;
     for(int x = 0; x < value.length(); x ++){
-       if (isupper(value[x]))
+        if(!isalpha(value[x])){
+            cipher_txt += (value[x]);
+        }
+        else if (isupper(value[x]))
             cipher_txt += char(int(value[x]+shift-65)%26 +65);
     // Encrypt Lowercase letters
         else
@@ -72,12 +75,11 @@ void life(bool status){
         int ch;
         string key,value;
         cin >> ch;
-        switch(ch){             //TODO: numbers in password 
+        switch(ch){            
             case 1:         // cant add spaces in password
                 cin >> key >> value;
                 value = encrypt(key,value,0);
                 put(key,value);
-                //fout << key << "-" << value << endl;;
                 break;
             case 2:
             {
@@ -86,7 +88,7 @@ void life(bool status){
             break;
             }
         
-            case 5:
+            case 3:
                 status = false;
                 break;
         }
