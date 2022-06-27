@@ -4,6 +4,7 @@
 # include <bitset> 
 # include "initialization.h"
 #include <sstream>
+# include "Utilities.h"
 using std::cout;
 using std::cin;
 using std::endl;
@@ -33,55 +34,36 @@ byte key_gen :: sbox(uint32_t row,uint32_t col) {
     {0xE1, 0xF8, 0x98, 0x11, 0x69, 0xD9, 0x8E, 0x94, 0x9B, 0x1E, 0x87, 0xE9, 0xCE, 0x55, 0x28, 0xDF},
     {0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16}
     };
-    //cout << row << " " << col<<" " << S_Box[row][col] << endl;
     return S_Box[row][col];
 }
+
 void key_gen::printing(char* to_print, int size) {
     for (int x = 0; x < size; x++) {
-        //cout << (int)to_print[x] << endl;
-        uint32_t value = (int)to_print[x];
-        //cout << str[x];
-        uint32_t left = value & 0xF;
-        uint32_t right = value & 0xF0;
-        right = right >> 4;
-        cout <<  right <<  left <<" ";
+        to_hex(to_print[x]);
+        cout << " ";
     }
     cout <<endl<< "------------------------------------------------" << endl;
 }
 char* key_gen::get() {
     return subkey;
 }
-char * key_gen:: xor (char * str1,char* str2) {     // check XOR
-    //printing(str1, 4);
-    //printing(str2, 4);
+char * key_gen:: xor (char * str1,char* str2) {     
     char* result = new char[4];
     for (int y = 0; y < 4; y++) {
         result[y] = str1[y] ^ str2[y];
     }
-    //printing(result, 4);
     return result;
 }
-void key_gen::rcon(char * &str,int round) {
+void key_gen::rcon(char * str,int round) {
     char Rcon[10] = { 0x01, 0x02, 0x04, 0x08, 0x10,
                 0x20, 0x40, 0x80, 0x1b, 0x36 };
-    //uint32_t value = *((uint32_t*)str);
-    /*unsigned long i = Rcon[round].to_ulong();
-    i = i << 24;
-    unsigned char c = static_cast<unsigned char>(i);
-    c = Rcon[round].to_string()[0];
-    // cout << (unsigned int)str[0] << endl;
-    //cout << sizeof(unsigned long) << endl;
-    */
     char c = Rcon[round];
     c = c ^ str[0];
     str[0] = c;
-    //cout << (int)c << endl;
-    //printing(str, 4);
 }
-void key_gen::substitue(char *&str) {
+void key_gen::substitue(char *str) {
     for (int x = 0; x < 4; x++) {
         uint32_t value = (int)str[x];
-        //cout << str[x];
         uint32_t left  = value & 0xF;
         uint32_t right = value & 0xF0; 
         right = right >> 4;
@@ -91,26 +73,22 @@ void key_gen::substitue(char *&str) {
         str[x] = c;
     
     }
-    //printing(str, 4); 
 }
-void key_gen::shift_left(char* &str,int shift)
+
+void key_gen::shift_left(char* str,int shift)
 {   
     uint32_t value = *((uint32_t *)str);
     uint32_t discard = 0xFF & value;
     value = value >> shift;
     discard = discard << 32 - shift;
     value = value | discard;
-    strncpy(str, (char*)&value, 4);
-    //printing(str, 4);
-
+    copy_string(str, (char*)&value, 4);
 }
 char * key_gen::g_func(char * w,int x) {
  
     shift_left(w,8);
     substitue(w);
-    //printing(w, 4);
     rcon(w, x);
-    //printing(w, 4);
     return w;
 }
 void key_gen::word_create() {
@@ -119,31 +97,22 @@ void key_gen::word_create() {
     char* w3 = new char[4];
     char* w4 = new char[4];
     char* w5 = new char[4];
-    strncpy(w1, subkey, 4);
-    strncpy(w2, subkey + 4, 4);
-    strncpy(w3, subkey + 8, 4);
-    strncpy(w4, subkey + 12, 4);
-    strncpy(w5, w4, 4);
-    //printing(w5, 4);
+    copy_string(w1, subkey, 4);
+    copy_string(w2, subkey + 4, 4);
+    copy_string(w3, subkey + 8, 4);
+    copy_string(w4, subkey + 12, 4);
+    copy_string(w5, w4, 4);
     for (int x = 0; x < 10; x++) {
-        //printing(w4, 4);
         w1 = xor (g_func(w4,x), w1); 
-       // printing(w1, 4);
-        strncpy(subkey + (16 * (x+1)), w1, 4);
+        copy_string(subkey + (16 * (x+1)), w1, 4);
         w2 = xor (w1, w2);
-        strncpy(subkey + (16 * (x+1)) + 4, w2, 4);
-        //cout << x << ": ";
-       // printing(w2, 4);
+        copy_string(subkey + (16 * (x+1)) + 4, w2, 4);
         w3 = xor (w2, w3);
-        strncpy(subkey + (16 * (x+1)) + 8, w3, 4);
-        //printing(w3, 4);
+        copy_string(subkey + (16 * (x+1)) + 8, w3, 4);
         w4 = xor (w3, w5);
-        strncpy(subkey + (16 * (x+1)) + 12, w4, 4);
-        //cout << "w8: ";
-        //printing(w3, 4);
-        //printing(w5, 4);
-        strncpy(w5, w4, 4);
-        //printing(subkey+16*(x),16);
+        copy_string(subkey + (16 * (x+1)) + 12, w4, 4);
+        copy_string(w5, w4, 4);
+       
     }
     delete[] w1;
     delete[] w2;
@@ -151,9 +120,9 @@ void key_gen::word_create() {
     delete[] w4;
 }
 void key_gen::key_expanse() {
-    strncpy(subkey, "Thats my Kung Fu", 16);      
+    copy_string(subkey, "Thats my Kung Fu", 16);      
     word_create();
-    //printing(subkey, 176);
+    printing(subkey, 176);
 }
     
 
